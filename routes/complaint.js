@@ -1,63 +1,57 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { storage } = require('../utils/cloudinary'); // 👈 Cloudinary storage
 const Complaint = require('../models/Complaint');
 
-// Setup multer for image uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
-  }
-});
-
+// Multer configuration for uploading files to Cloudinary
 const upload = multer({ storage });
 
-// File a complaint
+// File a complaint route
 router.post('/file', upload.single('image'), async (req, res) => {
   try {
+    // Remove these logs
+    // console.log('REQ FILE:', req.file); // Log Cloudinary file data
+    // console.log('REQ BODY:', req.body);
+
+    // Extract fields from the request body
     const { subject, name, address, description, lat, lng, userEmail } = req.body;
 
+    // Validate required fields
     if (!userEmail) {
       return res.status(400).json({ message: 'User email is required.' });
     }
 
+    // Create a new complaint
     const complaint = new Complaint({
       subject,
       name,
       address,
       description,
-      userEmail, // 👈 Unique identifier
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : '',
+      userEmail,
+      imageUrl: req.file?.path || '', // ✅ FIX: use 'path' instead of 'secure_url'
       location: {
         lat: parseFloat(lat),
         lng: parseFloat(lng),
-        gmapUrl: `https://www.google.com/maps?q=${lat},${lng}`
+        gmapUrl: `https://www.google.com/maps?q=${lat},${lng}`,
       },
-      status: 'Pending'
+      status: 'Pending', // Default status
     });
 
-    await complaint.save(); // ✅ Save complaint to DB
-
-    res.status(200).json({ message: 'Complaint filed successfully' }); // ✅ Send response
+    // Save complaint to DB
+    await complaint.save();
+    res.status(200).json({ message: 'Complaint filed successfully' });
   } catch (error) {
-    console.error('Error filing complaint:', error);
-    res.status(500).json({ message: 'Server error. Could not file complaint.' });
+    console.error('🔥 Error filing complaint:', error.message);
+    res.status(500).json({ message: 'Server error. Could not file complaint.', error: error.message });
   }
 });
 
-
-
-
-// Get all complaints
+// Get all complaints route
 router.get('/all', async (req, res) => {
   try {
     const complaints = await Complaint.find();
 
-    // Transform complaints to include image URL and Google Maps link
     const updated = complaints.map((c) => ({
       _id: c._id,
       subject: c.subject,
@@ -66,7 +60,6 @@ router.get('/all', async (req, res) => {
       description: c.description,
       status: c.status,
       imageUrl: c.imageUrl,
-
       location: {
         lat: c.location?.lat,
         lng: c.location?.lng,
@@ -84,19 +77,19 @@ router.get('/all', async (req, res) => {
   }
 });
 
-
-// ✅ Update complaint status using /update-status/:id
+// Update complaint status route
 router.put('/update-status/:id', async (req, res) => {
   try {
     const { status } = req.body;
     await Complaint.findByIdAndUpdate(req.params.id, { status });
     res.json({ message: 'Status updated successfully' });
   } catch (err) {
-    console.error('❌ Status update error:', err);
+    console.error('Status update error:', err);
     res.status(500).json({ message: 'Failed to update status' });
   }
 });
 
+// Get complaints by user route
 router.get('/my-complaints', async (req, res) => {
   const { email } = req.query;
   try {
@@ -106,6 +99,5 @@ router.get('/my-complaints', async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch complaints' });
   }
 });
-
 
 module.exports = router;

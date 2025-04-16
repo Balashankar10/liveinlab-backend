@@ -5,6 +5,12 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
+// Cloudinary setup for image uploads
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
+
+// Load environment variables
 dotenv.config();
 
 // ✅ Decode Google Credentials (for Railway)
@@ -17,24 +23,33 @@ if (process.env.GOOGLE_CREDENTIALS_B64) {
   process.env.GOOGLE_APPLICATION_CREDENTIALS = googleCredsPath;
 }
 
+// Initialize the app
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Health Check
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Setup Multer with Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'villagers_uploads', // Folder name in Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png'], // Allowed image formats
+  },
+});
+
+const upload = multer({ storage });
+
+// ✅ Health Check route
 app.get("/", (req, res) => {
   res.send("✅ Live-in-Lab backend is running!");
 });
-
-// ✅ Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// 🗂 Ensure uploads/ folder exists
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-  console.log('✅ uploads/ folder created');
-}
 
 // 🔌 Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
