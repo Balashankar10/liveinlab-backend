@@ -27,7 +27,7 @@ router.post("/speak", async (req, res) => {
       name: "ta-IN-Wavenet-A", // Voice name (choose a Tamil voice here)
     },
     audioConfig: {
-      audioEncoding: "MP3", // The audio format to return
+      audioEncoding: "LINEAR16", // The audio format to return
     },
   };
 
