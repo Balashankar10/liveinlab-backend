@@ -2,9 +2,13 @@ const express = require("express");
 const textToSpeech = require("@google-cloud/text-to-speech");
 const router = express.Router();
 
-// Initialize Google Cloud Text-to-Speech client
+// Initialize Google Cloud Text-to-Speech client with ENV vars
 const client = new textToSpeech.TextToSpeechClient({
-  keyFilename: "google-credentials.json",  // Make sure the correct path is provided
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+  projectId: process.env.GOOGLE_PROJECT_ID,
 });
 
 // Endpoint for converting text to speech
