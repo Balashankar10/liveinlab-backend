@@ -11,6 +11,9 @@ const client = new textToSpeech.TextToSpeechClient({
   projectId: process.env.GOOGLE_PROJECT_ID,
 });
 
+console.log("🔐 Key first line:", process.env.GOOGLE_PRIVATE_KEY.split('\\n')[0]);
+console.log("🛠️ Parsed key first line:", process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n').split('\n')[0]);
+
 // Endpoint for converting text to speech
 router.post("/speak", async (req, res) => {
   const { text } = req.body;  // Get the text from the request body
