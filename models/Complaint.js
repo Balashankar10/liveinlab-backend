@@ -11,10 +11,10 @@ const complaintSchema = new mongoose.Schema({
     lng: Number,
     gmapUrl: String
   },
-  userEmail: String, // ✅ Add this line
+  userEmail: String,
   status: {
     type: String,
-    enum: ['Pending', 'Working', 'Completed'],
+    enum: ['Pending', 'Working', 'Completed', 'Rejected'],
     default: 'Pending'
   }
 });
